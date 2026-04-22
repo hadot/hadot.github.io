@@ -87,15 +87,15 @@
     const owner = 'hadot'; 
     const repo = 'hadot.github.io';        
     const path = 'watch.json';
+    const m3uPath = 'watch.m3u'; // Name of the playlist file it will create/update
 
     let globalChannels = []; 
 
-    // --- NEW: Auto-Login on Page Load ---
     window.onload = function() {
         const savedToken = localStorage.getItem('catalyst_token');
         if (savedToken) {
             document.getElementById('githubToken').value = savedToken;
-            validateKey(); // Automatically click the button for you
+            validateKey(); 
         }
     };
 
@@ -212,7 +212,6 @@
             });
 
             if (response.ok) {
-                // --- NEW: Save the token so we can auto-login next time ---
                 localStorage.setItem('catalyst_token', token);
 
                 const data = await response.json();
@@ -233,7 +232,6 @@
                 showStatus("Access Granted", "#155724", "#d4edda");
                 setTimeout(() => { document.getElementById('status').style.display = "none"; }, 2000);
             } else {
-                // If the saved token is wrong/expired, wipe it out so they can try again
                 localStorage.removeItem('catalyst_token');
                 showStatus("sorry, invalid token or file not found", "#721c24", "#f8d7da");
             }
@@ -244,19 +242,10 @@
 
     async function updateConfig() {
         const token = document.getElementById('githubToken').value;
-        showStatus("Updating...", "#333", "#eef");
+        showStatus("Pushing to watch.json...", "#333", "#eef");
 
         try {
-            let sha = null;
-            const getResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (getResponse.ok) {
-                const data = await getResponse.json();
-                sha = data.sha;
-            }
-
+            // --- 1. PREPARE CONFIG DATA ---
             const config = {
                 stream_url: document.getElementById('stream_url').value,
                 stream_url_2: document.getElementById('stream_url_2').value,
@@ -268,23 +257,54 @@
                 title_2: document.getElementById('title_2').value
             };
 
-            const encodedContent = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2))));
+            // --- 2. UPDATE JSON FILE ---
+            let jsonSha = null;
+            const getJsonResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (getJsonResponse.ok) jsonSha = (await getJsonResponse.json()).sha;
 
-            const putResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+            const encodedJson = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2))));
+            const putJsonResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: `Update: ${config.title || 'Channels'}`, content: encodedContent, sha: sha })
+                body: JSON.stringify({ message: `Update watch.json: ${config.title || 'Channels'}`, content: encodedJson, sha: jsonSha })
             });
 
-            if (putResponse.ok) {
-                showStatus("🚀 Success! App updating...", "#155724", "#d4edda");
-                setTimeout(() => { document.getElementById('status').style.display = "none"; }, 3000);
-            } else {
-                const err = await putResponse.json();
-                showStatus("Error: " + err.message, "#721c24", "#f8d7da");
+            if (!putJsonResponse.ok) throw new Error("Failed to update watch.json");
+
+            showStatus("Pushing to playlist.m3u...", "#333", "#eef");
+
+            // --- 3. BUILD AND UPDATE M3U FILE ---
+            let m3uContent = "#EXTM3U\n";
+            if (config.stream_url) {
+                m3uContent += `#EXTINF:-1, ${config.title || 'Channel 1'}\n${config.stream_url}\n`;
             }
+            if (config.stream_url_2) {
+                m3uContent += `#EXTINF:-1, ${config.title_2 || 'Channel 2'}\n${config.stream_url_2}\n`;
+            }
+
+            let m3uSha = null;
+            const getM3uResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${m3uPath}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (getM3uResponse.ok) m3uSha = (await getM3uResponse.json()).sha;
+
+            const encodedM3u = btoa(unescape(encodeURIComponent(m3uContent)));
+            const putM3uResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${m3uPath}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: `Update M3U: ${config.title || 'Channels'}`, content: encodedM3u, sha: m3uSha })
+            });
+
+            if (!putM3uResponse.ok) throw new Error("Failed to update playlist.m3u");
+
+            // --- 4. SUCCESS ---
+            showStatus("🚀 Success! Both files updated.", "#155724", "#d4edda");
+            setTimeout(() => { document.getElementById('status').style.display = "none"; }, 3000);
+
         } catch (e) {
-            showStatus("Network Error: " + e.message, "#721c24", "#f8d7da");
+            showStatus("Error: " + e.message, "#721c24", "#f8d7da");
         }
     }
 </script>
