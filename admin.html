@@ -90,6 +90,15 @@
 
     let globalChannels = []; 
 
+    // --- NEW: Auto-Login on Page Load ---
+    window.onload = function() {
+        const savedToken = localStorage.getItem('catalyst_token');
+        if (savedToken) {
+            document.getElementById('githubToken').value = savedToken;
+            validateKey(); // Automatically click the button for you
+        }
+    };
+
     function parseM3U(content) {
         const lines = content.split('\n');
         const channels = [];
@@ -143,7 +152,6 @@
             return;
         }
 
-        // Optimization: limit render to top 300 to prevent browser freeze on huge playlists
         const renderLimit = Math.min(channels.length, 300);
         
         for(let i = 0; i < renderLimit; i++) {
@@ -204,6 +212,9 @@
             });
 
             if (response.ok) {
+                // --- NEW: Save the token so we can auto-login next time ---
+                localStorage.setItem('catalyst_token', token);
+
                 const data = await response.json();
                 const config = JSON.parse(decodeURIComponent(escape(atob(data.content))));
                 
@@ -222,6 +233,8 @@
                 showStatus("Access Granted", "#155724", "#d4edda");
                 setTimeout(() => { document.getElementById('status').style.display = "none"; }, 2000);
             } else {
+                // If the saved token is wrong/expired, wipe it out so they can try again
+                localStorage.removeItem('catalyst_token');
                 showStatus("sorry, invalid token or file not found", "#721c24", "#f8d7da");
             }
         } catch (e) {
