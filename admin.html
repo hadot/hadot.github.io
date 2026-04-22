@@ -59,7 +59,7 @@
                 }
 
                 // 2. Format the M3U content and Base64 encode it
-                const m3uContent = `#EXTM3U\n#EXTINF:-1, fatsweats stream\n${newUrl}\n`;
+                const m3uContent = `#EXTM3U\n#EXTINF:-1, fatsweats\n${newUrl}\n`;
                 const encodedContent = btoa(m3uContent);
 
                 statusDiv.innerText = "Pushing update to GitHub...";
