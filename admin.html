@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Watch Stream</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
+        label { display: block; margin-top: 15px; font-weight: bold; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 8px; margin-top: 5px; }
+        button { margin-top: 20px; padding: 10px 20px; cursor: pointer; background: #000; color: #fff; border: none; }
+        #status { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>Update fatsweats.com/watch.m3u</h2>
+    
+    <label for="streamUrl">New Stream URL:</label>
+    <input type="text" id="streamUrl" placeholder="https://example.com/stream.m3u8" required>
+
+    <label for="githubToken">GitHub API Key (PAT):</label>
+    <input type="password" id="githubToken" placeholder="github_pat_..." required>
+
+    <button onclick="updateFile()">Update Playlist</button>
+
+    <div id="status"></div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const owner = 'YOUR_GITHUB_USERNAME'; // e.g., 'fatsweats'
+        const repo = 'YOUR_REPO_NAME';        // e.g., 'fatsweats.github.io'
+        const path = 'watch.m3u';
+        // ---------------------
+
+        async function updateFile() {
+            const newUrl = document.getElementById('streamUrl').value;
+            const token = document.getElementById('githubToken').value;
+            const statusDiv = document.getElementById('status');
+
+            if (!newUrl || !token) {
+                statusDiv.innerText = "Please fill out both fields.";
+                return;
+            }
+
+            statusDiv.innerText = "Checking existing file...";
+            statusDiv.style.color = "blue";
+
+            try {
+                // 1. Get the current file's SHA (GitHub requires this to overwrite a file)
+                let sha = null;
+                const getResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (getResponse.ok) {
+                    const data = await getResponse.json();
+                    sha = data.sha;
+                }
+
+                // 2. Format the M3U content and Base64 encode it
+                const m3uContent = `#EXTM3U\n#EXTINF:-1, fatsweats stream\n${newUrl}\n`;
+                const encodedContent = btoa(m3uContent);
+
+                statusDiv.innerText = "Pushing update to GitHub...";
+
+                // 3. Send the PUT request to update the file
+                const putBody = {
+                    message: `Update watch.m3u with new URL`,
+                    content: encodedContent
+                };
+                if (sha) putBody.sha = sha; // Include SHA if the file already existed
+
+                const putResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(putBody)
+                });
+
+                if (putResponse.ok) {
+                    statusDiv.innerText = "Success! File updated. Please wait 1-3 minutes for GitHub Pages to deploy the changes to fatsweats.com/watch.m3u.";
+                    statusDiv.style.color = "green";
+                } else {
+                    const errorData = await putResponse.json();
+                    statusDiv.innerText = `Error updating file: ${errorData.message}`;
+                    statusDiv.style.color = "red";
+                }
+
+            } catch (error) {
+                statusDiv.innerText = `Network or JavaScript Error: ${error.message}`;
+                statusDiv.style.color = "red";
+            }
+        }
+    </script>
+</body>
+</html>
