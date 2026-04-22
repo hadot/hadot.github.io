@@ -10,7 +10,7 @@
         h2 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 15px; font-size: 1.3rem; }
         
         label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.8rem; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
-        input[type="text"], input[type="number"], input[type="password"], input[type="file"], input[type="url"] { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; }
+        input[type="text"], input[type="number"], input[type="password"], input[type="file"] { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; }
         
         /* Layout Grids */
         .grid-2 { display: grid; grid-template-columns: 1fr 2.5fr; gap: 15px; align-items: end; margin-bottom: 5px; }
@@ -21,23 +21,18 @@
         .btn-push:hover { background: #1b1f23; }
         .btn-auth { background: #007bff; color: white; }
         .btn-auth:hover { background: #0056b3; }
-        .btn-small { margin-top: 0; padding: 8px 12px; width: auto; background: #28a745; color: white; }
-        .btn-small:hover { background: #218838; }
         
         /* M3U Quick Add Styles */
-        .source-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: end; margin-bottom: 10px; }
-        .input-group { display: flex; gap: 5px; align-items: center; }
-        .input-group input { margin-top: 0; }
-        
-        .control-row { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .radio-group { display: flex; justify-content: space-around; background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1px solid #eee; height: 35px; align-items: center; box-sizing: border-box; margin-top: 4px; }
+        .m3u-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+        .m3u-toolbar > * { flex: 1; min-width: 150px; margin: 0; }
+        .radio-group { display: flex; justify-content: space-around; background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1px solid #eee; height: 35px; align-items: center; box-sizing: border-box; }
         .radio-group label { margin: 0; font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.85rem; text-transform: none; }
         
         .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; max-height: 200px; overflow-y: auto; padding: 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 6px; }
         .btn-quick { margin-top: 0; padding: 6px; font-size: 0.8rem; background: #fff; border: 1px solid #ccc; color: #333; border-radius: 4px; font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .btn-quick:hover { background: #e9ecef; border-color: #adb5bd; }
 
-        #admin-ui { display: none; }
+        #admin-ui, #filter-channels { display: none; }
         #status { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 0.9rem; display: none; text-align: center; font-weight: bold; }
     </style>
 </head>
@@ -71,37 +66,17 @@
     <button class="btn-push" onclick="updateConfig()">Push Updates to App</button>
 
     <div style="margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px;">
-        
-        <div class="source-row">
-            <div>
-                <label>Upload File</label>
-                <input type="file" id="m3u-upload" accept=".m3u,.m3u8" onchange="handleFileUpload(event)">
-            </div>
-            <div>
-                <label>Or Fetch from Link</label>
-                <div class="input-group">
-                    <input type="url" id="m3u-url" placeholder="https://example.com/list.m3u">
-                    <button class="btn-small" onclick="fetchUrl()">Load</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="control-row">
-            <div>
-                <label>Search List</label>
-                <input type="text" id="filter-channels" placeholder="Search loaded channels..." onkeyup="filterChannels()" disabled>
-            </div>
-            <div>
-                <label>Target Slot</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="targetSlot" value="1" checked> Slot 1</label>
-                    <label><input type="radio" name="targetSlot" value="2"> Slot 2</label>
-                </div>
+        <div class="m3u-toolbar">
+            <input type="file" id="m3u-upload" accept=".m3u,.m3u8" onchange="handleFileUpload(event)">
+            <input type="text" id="filter-channels" placeholder="Search channels..." onkeyup="filterChannels()">
+            <div class="radio-group">
+                <label><input type="radio" name="targetSlot" value="1" checked> Slot 1</label>
+                <label><input type="radio" name="targetSlot" value="2"> Slot 2</label>
             </div>
         </div>
         
         <div class="quick-grid" id="quick-add-container">
-            <p style="grid-column: 1 / -1; color: #888; font-size: 0.85rem; text-align: center; margin: 15px 0;">Load an M3U file or link to extract channels</p>
+            <p style="grid-column: 1 / -1; color: #888; font-size: 0.85rem; text-align: center; margin: 15px 0;">Upload an M3U file to extract channels</p>
         </div>
     </div>
 </div>
@@ -135,47 +110,28 @@
         return channels;
     }
 
-    function handleParsedData(channels) {
-        globalChannels = channels;
-        if(globalChannels.length > 0) {
-            document.getElementById('filter-channels').disabled = false;
-            document.getElementById('filter-channels').value = '';
-            renderChannelList(globalChannels);
-            showStatus(`Loaded ${globalChannels.length} channels`, "#155724", "#d4edda");
-        } else {
-            showStatus("No valid channels found.", "#721c24", "#f8d7da");
-        }
-        setTimeout(() => { document.getElementById('status').style.display = "none"; }, 2500);
-    }
-
     function handleFileUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        showStatus("Reading local file...", "#004085", "#cce5ff");
+        showStatus("Reading M3U file...", "#004085", "#cce5ff");
 
         const reader = new FileReader();
         reader.onload = function(e) {
-            handleParsedData(parseM3U(e.target.result));
+            const content = e.target.result;
+            globalChannels = parseM3U(content);
+            
+            if(globalChannels.length > 0) {
+                document.getElementById('filter-channels').style.display = 'block';
+                renderChannelList(globalChannels);
+                showStatus(`Loaded ${globalChannels.length} channels`, "#155724", "#d4edda");
+            } else {
+                showStatus("No valid channels found in file.", "#721c24", "#f8d7da");
+            }
+            
+            setTimeout(() => { document.getElementById('status').style.display = "none"; }, 2500);
         };
         reader.readAsText(file);
-    }
-
-    async function fetchUrl() {
-        const url = document.getElementById('m3u-url').value;
-        if (!url) return;
-
-        showStatus("Fetching from link...", "#004085", "#cce5ff");
-
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Server returned " + response.status);
-            const content = await response.text();
-            handleParsedData(parseM3U(content));
-        } catch (e) {
-            showStatus("Fetch failed (Check link or CORS): " + e.message, "#721c24", "#f8d7da");
-            setTimeout(() => { document.getElementById('status').style.display = "none"; }, 4000);
-        }
     }
 
     function renderChannelList(channels) {
@@ -187,7 +143,7 @@
             return;
         }
 
-        // Limit render to top 300 to prevent browser lag on massive playlists
+        // Optimization: limit render to top 300 to prevent browser freeze on huge playlists
         const renderLimit = Math.min(channels.length, 300);
         
         for(let i = 0; i < renderLimit; i++) {
