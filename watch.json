@@ -1,8 +1,8 @@
 {
   "stream_url": "https://i.mjh.nz/.r/10-vic.m3u8",
-  "ua": "otg/1.5.1 (AppleTv Apple TV 4; tvOS16.0; appletv.client) libcurl/7.58.0 OpenSSL/1.0.2o zlib/1.2.11 clib/1.8.56",
-  "buffer": 15.0,
+  "ua": "AppleCoreMedia/1.0.0.19L346 (Apple TV; U; CPU OS 15_4 like Mac OS X; en_us)",
+  "buffer": 15,
   "start_buffer": 2.5,
   "poll_sec": 30,
-  "title": "UFC"
+  "title": "TV"
 }
