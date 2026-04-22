@@ -87,7 +87,6 @@
     const owner = 'hadot'; 
     const repo = 'hadot.github.io';        
     const path = 'watch.json';
-    const m3uPath = 'watch.m3u'; // Name of the playlist file it will create/update
 
     let globalChannels = []; 
 
@@ -242,7 +241,7 @@
 
     async function updateConfig() {
         const token = document.getElementById('githubToken').value;
-        showStatus("Pushing to watch.json...", "#333", "#eef");
+        showStatus("Pushing updates...", "#333", "#eef");
 
         try {
             // --- 1. PREPARE CONFIG DATA ---
@@ -273,34 +272,44 @@
 
             if (!putJsonResponse.ok) throw new Error("Failed to update watch.json");
 
-            showStatus("Pushing to playlist.m3u...", "#333", "#eef");
-
-            // --- 3. BUILD AND UPDATE M3U FILE ---
-            let m3uContent = "#EXTM3U\n";
+            // --- 3. BUILD AND UPDATE 1.m3u ---
             if (config.stream_url) {
-                m3uContent += `#EXTINF:-1, ${config.title || 'Channel 1'}\n${config.stream_url}\n`;
+                let m3u1Content = `#EXTM3U\n#EXTINF:-1, ${config.title || 'Channel 1'}\n${config.stream_url}\n`;
+                let m3u1Sha = null;
+                const getM3u1Response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/1.m3u`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (getM3u1Response.ok) m3u1Sha = (await getM3u1Response.json()).sha;
+
+                const encodedM3u1 = btoa(unescape(encodeURIComponent(m3u1Content)));
+                const putM3u1Response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/1.m3u`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: `Update 1.m3u: ${config.title || 'Channel 1'}`, content: encodedM3u1, sha: m3u1Sha })
+                });
+                if (!putM3u1Response.ok) throw new Error("Failed to update 1.m3u");
             }
+
+            // --- 4. BUILD AND UPDATE 2.m3u ---
             if (config.stream_url_2) {
-                m3uContent += `#EXTINF:-1, ${config.title_2 || 'Channel 2'}\n${config.stream_url_2}\n`;
+                let m3u2Content = `#EXTM3U\n#EXTINF:-1, ${config.title_2 || 'Channel 2'}\n${config.stream_url_2}\n`;
+                let m3u2Sha = null;
+                const getM3u2Response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/2.m3u`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (getM3u2Response.ok) m3u2Sha = (await getM3u2Response.json()).sha;
+
+                const encodedM3u2 = btoa(unescape(encodeURIComponent(m3u2Content)));
+                const putM3u2Response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/2.m3u`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: `Update 2.m3u: ${config.title_2 || 'Channel 2'}`, content: encodedM3u2, sha: m3u2Sha })
+                });
+                if (!putM3u2Response.ok) throw new Error("Failed to update 2.m3u");
             }
 
-            let m3uSha = null;
-            const getM3uResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${m3uPath}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (getM3uResponse.ok) m3uSha = (await getM3uResponse.json()).sha;
-
-            const encodedM3u = btoa(unescape(encodeURIComponent(m3uContent)));
-            const putM3uResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${m3uPath}`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: `Update M3U: ${config.title || 'Channels'}`, content: encodedM3u, sha: m3uSha })
-            });
-
-            if (!putM3uResponse.ok) throw new Error("Failed to update playlist.m3u");
-
-            // --- 4. SUCCESS ---
-            showStatus("🚀 Success! Both files updated.", "#155724", "#d4edda");
+            // --- 5. SUCCESS ---
+            showStatus("🚀 Success! Data and M3U files updated.", "#155724", "#d4edda");
             setTimeout(() => { document.getElementById('status').style.display = "none"; }, 3000);
 
         } catch (e) {
