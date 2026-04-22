@@ -5,28 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catalyst Control Center</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 30px auto; padding: 20px; background: #f4f4f9; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        h3 { margin-top: 25px; margin-bottom: 10px; color: #444; font-size: 1.1rem; }
-        label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.9rem; color: #555; }
-        input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        button { width: 100%; margin-top: 20px; padding: 12px; cursor: pointer; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; transition: 0.2s; }
+        body { font-family: 'Segoe UI', sans-serif; max-width: 750px; margin: 20px auto; padding: 15px; background: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 15px; font-size: 1.3rem; }
+        
+        label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.8rem; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+        input[type="text"], input[type="number"], input[type="password"], input[type="file"] { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; }
+        
+        /* Layout Grids */
+        .grid-2 { display: grid; grid-template-columns: 1fr 2.5fr; gap: 15px; align-items: end; margin-bottom: 5px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; align-items: end; margin-top: 5px; background: #fcfcfc; padding: 10px; border-radius: 8px; border: 1px solid #eee;}
+        
+        button { width: 100%; margin-top: 15px; padding: 10px; cursor: pointer; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; transition: 0.2s; }
         .btn-push { background: #24292e; color: #fff; }
         .btn-push:hover { background: #1b1f23; }
         .btn-auth { background: #007bff; color: white; }
         .btn-auth:hover { background: #0056b3; }
         
-        /* Quick Add Styles */
-        .radio-group { display: flex; gap: 15px; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #eee; }
-        .radio-group label { margin-top: 0; font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; max-height: 200px; overflow-y: auto; padding: 10px; background: #fafafa; border: 1px solid #ddd; border-radius: 6px; }
-        .btn-quick { margin-top: 0; padding: 8px; font-size: 0.8rem; background: #fff; border: 1px solid #ccc; color: #333; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        /* M3U Quick Add Styles */
+        .m3u-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+        .m3u-toolbar > * { flex: 1; min-width: 150px; margin: 0; }
+        .radio-group { display: flex; justify-content: space-around; background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1px solid #eee; height: 35px; align-items: center; box-sizing: border-box; }
+        .radio-group label { margin: 0; font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.85rem; text-transform: none; }
+        
+        .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; max-height: 200px; overflow-y: auto; padding: 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 6px; }
+        .btn-quick { margin-top: 0; padding: 6px; font-size: 0.8rem; background: #fff; border: 1px solid #ccc; color: #333; border-radius: 4px; font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .btn-quick:hover { background: #e9ecef; border-color: #adb5bd; }
 
-        #admin-ui { display: none; }
-        #status { margin-top: 20px; padding: 10px; border-radius: 6px; font-size: 0.9rem; display: none; }
+        #admin-ui, #filter-channels { display: none; }
+        #status { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 0.9rem; display: none; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -39,50 +46,38 @@
 <div id="admin-ui" class="card">
     <h2>CATALYST CONTROL CENTER</h2>
     
-    <label>Stream URL (Primary)</label>
-    <input type="text" id="stream_url" placeholder="https://link-1.m3u8">
-
-    <label>Stream URL 2</label>
-    <input type="text" id="stream_url_2" placeholder="https://link-2.m3u8">
-
-    <div class="grid">
-        <div>
-            <label>Title</label>
-            <input type="text" id="title" placeholder="Channel 1">
-        </div>
-        <div>
-            <label>Title 2</label>
-            <input type="text" id="title_2" placeholder="Channel 2">
-        </div>
+    <div class="grid-2">
+        <div><label>Title 1</label><input type="text" id="title" placeholder="Channel 1"></div>
+        <div><label>Stream URL (Primary)</label><input type="text" id="stream_url" placeholder="https://link-1.m3u8"></div>
     </div>
 
-    <label>User-Agent (UA)</label>
-    <input type="text" id="ua">
-
-    <div class="grid">
-        <div>
-            <label>Buffer (Sec)</label>
-            <input type="number" id="buffer" step="0.5">
-        </div>
-        <div>
-            <label>Start Delay (Sec)</label>
-            <input type="number" id="start_buffer" step="0.5">
-        </div>
+    <div class="grid-2">
+        <div><label>Title 2</label><input type="text" id="title_2" placeholder="Channel 2"></div>
+        <div><label>Stream URL 2</label><input type="text" id="stream_url_2" placeholder="https://link-2.m3u8"></div>
     </div>
 
-    <label>Poll Frequency (Sec)</label>
-    <input type="number" id="poll_sec">
+    <div class="grid-4">
+        <div><label>User-Agent</label><input type="text" id="ua" placeholder="Mozilla/5.0..."></div>
+        <div><label>Buffer (Sec)</label><input type="number" id="buffer" step="0.5"></div>
+        <div><label>Start Delay</label><input type="number" id="start_buffer" step="0.5"></div>
+        <div><label>Poll (Sec)</label><input type="number" id="poll_sec"></div>
+    </div>
 
-    <button class="btn-push" onclick="updateConfig()">Push Updates</button>
+    <button class="btn-push" onclick="updateConfig()">Push Updates to App</button>
 
-    <div style="margin-top: 30px; border-top: 2px solid #eee;">
-        <h3>⚡ Quick Add Channels</h3>
-        <div class="radio-group">
-            <label><input type="radio" name="targetSlot" value="1" checked> Fill Primary Slot</label>
-            <label><input type="radio" name="targetSlot" value="2"> Fill Slot 2</label>
-        </div>
-        <div class="quick-grid" id="quick-add-container">
+    <div style="margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px;">
+        <div class="m3u-toolbar">
+            <input type="file" id="m3u-upload" accept=".m3u,.m3u8" onchange="handleFileUpload(event)">
+            <input type="text" id="filter-channels" placeholder="Search channels..." onkeyup="filterChannels()">
+            <div class="radio-group">
+                <label><input type="radio" name="targetSlot" value="1" checked> Slot 1</label>
+                <label><input type="radio" name="targetSlot" value="2"> Slot 2</label>
             </div>
+        </div>
+        
+        <div class="quick-grid" id="quick-add-container">
+            <p style="grid-column: 1 / -1; color: #888; font-size: 0.85rem; text-align: center; margin: 15px 0;">Upload an M3U file to extract channels</p>
+        </div>
     </div>
 </div>
 
@@ -93,40 +88,86 @@
     const repo = 'hadot.github.io';        
     const path = 'watch.json';
 
-    // Highlighted subset of channels from your M3U list
-    const quickChannels = [
-        { name: "Seven (Syd)", url: "https://i.mjh.nz/.r/seven-syd.m3u8" },
-        { name: "Channel 9 (NSW)", url: "https://i.mjh.nz/.r/channel-9-nsw.m3u8" },
-        { name: "10 (NSW)", url: "https://i.mjh.nz/.r/10-nsw.m3u8" },
-        { name: "ABC TV (NSW)", url: "https://c.mjh.nz/abc-nsw.m3u8" },
-        { name: "SBS", url: "https://i.mjh.nz/.r/sbs-sbst.m3u8" },
-        { name: "7mate (Syd)", url: "https://i.mjh.nz/.r/7mate-syd.m3u8" },
-        { name: "9Go! (NSW)", url: "https://i.mjh.nz/.r/go-nsw.m3u8" },
-        { name: "10 Peach (NSW)", url: "https://i.mjh.nz/.r/10peach-nsw.m3u8" },
-        { name: "ABC News", url: "https://c.mjh.nz/abc-news.m3u8" },
-        { name: "BBC News", url: "https://i.mjh.nz/.r/bbc-news.m3u8" },
-        { name: "Sky News Now", url: "https://i.mjh.nz/.r/sky-news-now.m3u8" },
-        { name: "Al Jazeera", url: "https://i.mjh.nz/.r/al-jazeera.m3u8" },
-        { name: "Bloomberg TV", url: "https://i.mjh.nz/.r/bloomberg-tv.m3u8" },
-        { name: "Redbull TV", url: "https://i.mjh.nz/.r/redbull-tv.m3u8" },
-        { name: "Moviesphere", url: "https://i.mjh.nz/.r/10-moviesphere.m3u8" },
-        { name: "South Park", url: "https://i.mjh.nz/.r/10-south-park.m3u8" },
-        { name: "Mythbusters", url: "https://i.mjh.nz/.r/mythbusters-fast.m3u8" },
-        { name: "Top Gear 24/7", url: "https://i.mjh.nz/.r/bbc-top-gear-247-fast.m3u8" },
-        { name: "MasterChef", url: "https://i.mjh.nz/.r/10-masterchef.m3u8" },
-        { name: "Bondi Rescue", url: "https://i.mjh.nz/.r/cas41-fast.m3u8" }
-    ];
+    let globalChannels = []; 
 
-    // Build the Quick Add UI on load
-    function initQuickAdd() {
+    function parseM3U(content) {
+        const lines = content.split('\n');
+        const channels = [];
+        let currentName = '';
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('#EXTINF:')) {
+                const parts = line.split(',');
+                currentName = parts.length > 1 ? parts.slice(1).join(',').trim() : 'Unknown Channel';
+            } else if (line !== '' && !line.startsWith('#')) {
+                if (currentName) {
+                    channels.push({ name: currentName, url: line });
+                    currentName = ''; 
+                }
+            }
+        }
+        return channels;
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        showStatus("Reading M3U file...", "#004085", "#cce5ff");
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            globalChannels = parseM3U(content);
+            
+            if(globalChannels.length > 0) {
+                document.getElementById('filter-channels').style.display = 'block';
+                renderChannelList(globalChannels);
+                showStatus(`Loaded ${globalChannels.length} channels`, "#155724", "#d4edda");
+            } else {
+                showStatus("No valid channels found in file.", "#721c24", "#f8d7da");
+            }
+            
+            setTimeout(() => { document.getElementById('status').style.display = "none"; }, 2500);
+        };
+        reader.readAsText(file);
+    }
+
+    function renderChannelList(channels) {
         const container = document.getElementById('quick-add-container');
-        quickChannels.forEach(ch => {
+        container.innerHTML = ''; 
+
+        if(channels.length === 0) {
+            container.innerHTML = '<p style="grid-column: 1 / -1; color: #888; text-align: center; font-size: 0.85rem;">No matching channels.</p>';
+            return;
+        }
+
+        // Optimization: limit render to top 300 to prevent browser freeze on huge playlists
+        const renderLimit = Math.min(channels.length, 300);
+        
+        for(let i = 0; i < renderLimit; i++) {
+            const ch = channels[i];
             const btn = document.createElement('button');
             btn.className = 'btn-quick';
             btn.innerText = ch.name;
+            btn.title = ch.url; 
             btn.onclick = () => fillSlot(ch.name, ch.url);
             container.appendChild(btn);
-        });
+        }
+
+        if(channels.length > 300) {
+            const msg = document.createElement('p');
+            msg.style.cssText = "grid-column: 1 / -1; color: #888; text-align: center; font-size: 0.8rem; margin-top: 10px;";
+            msg.innerText = `+ ${channels.length - 300} more (use search to find them)`;
+            container.appendChild(msg);
+        }
+    }
+
+    function filterChannels() {
+        const query = document.getElementById('filter-channels').value.toLowerCase();
+        const filtered = globalChannels.filter(ch => ch.name.toLowerCase().includes(query));
+        renderChannelList(filtered);
     }
 
     function fillSlot(name, url) {
@@ -151,7 +192,6 @@
         statusDiv.style.background = bg || "#eef";
     }
 
-    // Step 1: Validate key and pull data
     async function validateKey() {
         const token = document.getElementById('githubToken').value;
         if (!token) return alert("big blue button");
@@ -165,11 +205,8 @@
 
             if (response.ok) {
                 const data = await response.json();
-                
-                // Using decodeURIComponent(escape(atob())) to handle UTF-8 safely
                 const config = JSON.parse(decodeURIComponent(escape(atob(data.content))));
                 
-                // Fill fields
                 document.getElementById('stream_url').value = config.stream_url || "";
                 document.getElementById('stream_url_2').value = config.stream_url_2 || "";
                 document.getElementById('title').value = config.title || "";
@@ -179,13 +216,9 @@
                 document.getElementById('start_buffer').value = config.start_buffer || 2.5;
                 document.getElementById('poll_sec').value = config.poll_sec || 30;
 
-                // Toggle UI
                 document.getElementById('auth-ui').style.display = "none";
                 document.getElementById('admin-ui').style.display = "block";
                 
-                // Initialize Quick Add buttons
-                initQuickAdd();
-
                 showStatus("Access Granted", "#155724", "#d4edda");
                 setTimeout(() => { document.getElementById('status').style.display = "none"; }, 2000);
             } else {
@@ -196,7 +229,6 @@
         }
     }
 
-    // Step 2: Push Updates
     async function updateConfig() {
         const token = document.getElementById('githubToken').value;
         showStatus("Updating...", "#333", "#eef");
@@ -223,7 +255,6 @@
                 title_2: document.getElementById('title_2').value
             };
 
-            // Modern standard for encoding to base64
             const encodedContent = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2))));
 
             const putResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
