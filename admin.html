@@ -3,25 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>login</title>
+    <title>Catalyst Control Center</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 30px auto; padding: 20px; background: #f4f4f9; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h3 { margin-top: 25px; margin-bottom: 10px; color: #444; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; }
         label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.9rem; color: #555; }
-        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        input[type="text"], input[type="number"], input[type="password"], textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-family: monospace;}
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         button { width: 100%; margin-top: 20px; padding: 12px; cursor: pointer; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; transition: 0.2s; }
         .btn-push { background: #24292e; color: #fff; }
+        .btn-push:hover { background: #1b1f23; }
         .btn-auth { background: #007bff; color: white; }
-        #admin-ui { display: none; } /* Hidden by default */
+        .btn-auth:hover { background: #0056b3; }
+        .btn-load { background: #28a745; color: white; margin-top: 10px; padding: 10px;}
+        .btn-load:hover { background: #218838; }
+        
+        /* Quick Add Styles */
+        .radio-group { display: flex; gap: 15px; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #eee; }
+        .radio-group label { margin-top: 0; font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        #searchChannels { margin-bottom: 15px; padding: 8px 12px; font-size: 0.9rem; }
+        .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; max-height: 350px; overflow-y: auto; padding: 10px; background: #fafafa; border: 1px solid #ddd; border-radius: 6px; }
+        .btn-quick { margin-top: 0; padding: 8px; font-size: 0.8rem; background: #fff; border: 1px solid #ccc; color: #333; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-quick:hover { background: #e9ecef; border-color: #adb5bd; }
+        .group-header { grid-column: 1 / -1; margin: 15px 0 5px 0; font-size: 0.9rem; font-weight: bold; color: #666; border-bottom: 1px solid #ddd; padding-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;}
+
+        #admin-ui { display: none; }
         #status { margin-top: 20px; padding: 10px; border-radius: 6px; font-size: 0.9rem; display: none; }
     </style>
 </head>
 <body>
 
 <div id="auth-ui" class="card">
-    <input type="password" id="githubToken" >
+    <input type="password" id="githubToken" placeholder="Enter GitHub Token...">
     <button class="btn-auth" onclick="validateKey()">big blue button</button>
 </div>
 
@@ -63,6 +78,30 @@
     <input type="number" id="poll_sec">
 
     <button class="btn-push" onclick="updateConfig()">Push Updates</button>
+
+    <div style="margin-top: 30px; border-top: 2px solid #eee; padding-top: 10px;">
+        <h3>📥 Import M3U Playlist</h3>
+        <textarea id="m3uInput" rows="3" placeholder="Paste your raw #EXTM3U text here..."></textarea>
+        <button class="btn-load" onclick="loadPastedM3U()">Load Channels</button>
+
+        <h3 style="margin-top: 30px;">
+            ⚡ Quick Add 
+            <span id="channelCount" style="font-size: 0.8rem; color: #888; font-weight: normal;">0 channels loaded</span>
+        </h3>
+        
+        <input type="text" id="searchChannels" placeholder="Search channels (e.g. 'News' or 'ABC')..." onkeyup="filterChannels()">
+        
+        <div class="radio-group">
+            <label><input type="radio" name="targetSlot" value="1" checked> Fill Primary Slot</label>
+            <label><input type="radio" name="targetSlot" value="2"> Fill Slot 2</label>
+        </div>
+        
+        <div class="quick-grid" id="quick-add-container">
+            <div style="grid-column: 1/-1; text-align: center; color: #888; padding: 20px;">
+                Paste an M3U playlist above and click Load.
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="status"></div>
@@ -72,6 +111,135 @@
     const repo = 'hadot.github.io';        
     const path = 'watch.json';
 
+    let allChannels = []; // Holds the parsed channels globally
+
+    // Load and Parse pasted text
+    function loadPastedM3U() {
+        const text = document.getElementById('m3uInput').value;
+        if (!text || !text.includes('#EXTINF')) {
+            showStatus("No valid channels found. Please paste M3U text.", "#856404", "#fff3cd");
+            return;
+        }
+
+        allChannels = parseM3U(text);
+        renderChannels(allChannels);
+        showStatus(`Loaded ${allChannels.length} channels successfully!`, "#155724", "#d4edda");
+        setTimeout(() => { document.getElementById('status').style.display = "none"; }, 2000);
+    }
+
+    // M3U Parser Logic
+    function parseM3U(text) {
+        const lines = text.split('\n');
+        const channels = [];
+        let name = "", group = "";
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            // Clean up accidental line breaks or brackets
+            if (line.startsWith('[source')) {
+                line = line.replace(/\/g, '');
+            }
+
+            if (line.startsWith('#EXTINF:')) {
+                const groupMatch = line.match(/group-title="([^"]+)"/);
+                group = groupMatch ? groupMatch[1].trim() : "Uncategorized";
+                
+                const nameMatch = line.match(/,(.+)$/);
+                name = nameMatch ? nameMatch[1].trim() : "Unknown Channel";
+            } else if (line.startsWith('http')) {
+                if (name && line) {
+                    channels.push({ name: name, url: line, group: group });
+                }
+                name = ""; group = ""; // reset for next
+            }
+        }
+        return channels;
+    }
+
+    // Group and render the buttons
+    function renderChannels(channelsToRender) {
+        const container = document.getElementById('quick-add-container');
+        container.innerHTML = '';
+        document.getElementById('channelCount').innerText = `${channelsToRender.length} channels loaded`;
+
+        if (channelsToRender.length === 0) return;
+
+        // Group by group-title
+        const groups = {};
+        channelsToRender.forEach(ch => {
+            if (!groups[ch.group]) groups[ch.group] = [];
+            groups[ch.group].push(ch);
+        });
+
+        // Create UI elements
+        for (const [groupName, channels] of Object.entries(groups)) {
+            // Group Header
+            const header = document.createElement('div');
+            header.className = 'group-header';
+            header.innerText = groupName;
+            container.appendChild(header);
+
+            // Channel Buttons
+            channels.forEach(ch => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-quick';
+                btn.innerText = ch.name;
+                btn.title = ch.name; // Tooltip for long names
+                // Tag the button with data attributes for easy searching
+                btn.dataset.name = ch.name.toLowerCase();
+                btn.dataset.group = groupName.toLowerCase();
+                btn.onclick = () => fillSlot(ch.name, ch.url);
+                container.appendChild(btn);
+            });
+        }
+    }
+
+    // Search filter
+    function filterChannels() {
+        const query = document.getElementById('searchChannels').value.toLowerCase();
+        const buttons = document.querySelectorAll('.btn-quick');
+        const headers = document.querySelectorAll('.group-header');
+
+        // Hide/Show buttons based on search
+        buttons.forEach(btn => {
+            if (btn.dataset.name.includes(query) || btn.dataset.group.includes(query)) {
+                btn.style.display = 'block';
+            } else {
+                btn.style.display = 'none';
+            }
+        });
+
+        // Hide empty group headers
+        headers.forEach(header => {
+            let hasVisibleButtons = false;
+            let nextEl = header.nextElementSibling;
+            while (nextEl && nextEl.classList.contains('btn-quick')) {
+                if (nextEl.style.display === 'block') {
+                    hasVisibleButtons = true;
+                    break;
+                }
+                nextEl = nextEl.nextElementSibling;
+            }
+            header.style.display = hasVisibleButtons ? 'block' : 'none';
+        });
+    }
+
+    // Fill Input Slots
+    function fillSlot(name, url) {
+        const target = document.querySelector('input[name="targetSlot"]:checked').value;
+        if (target === "1") {
+            document.getElementById('title').value = name;
+            document.getElementById('stream_url').value = url;
+            showStatus(`Primary slot filled with ${name}`, "#004085", "#cce5ff");
+        } else {
+            document.getElementById('title_2').value = name;
+            document.getElementById('stream_url_2').value = url;
+            showStatus(`Slot 2 filled with ${name}`, "#004085", "#cce5ff");
+        }
+        setTimeout(() => { document.getElementById('status').style.display = "none"; }, 1500);
+    }
+
+    // Status Banner
     function showStatus(text, color, bg) {
         const statusDiv = document.getElementById('status');
         statusDiv.style.display = "block";
@@ -85,7 +253,7 @@
         const token = document.getElementById('githubToken').value;
         if (!token) return alert("big blue button");
 
-        showStatus("hmmmm...", "#333", "#eef");
+        showStatus("Authenticating...", "#333", "#eef");
 
         try {
             const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
@@ -94,9 +262,8 @@
 
             if (response.ok) {
                 const data = await response.json();
-                const config = JSON.parse(atob(data.content));
+                const config = JSON.parse(decodeURIComponent(escape(atob(data.content))));
                 
-                // Fill fields
                 document.getElementById('stream_url').value = config.stream_url || "";
                 document.getElementById('stream_url_2').value = config.stream_url_2 || "";
                 document.getElementById('title').value = config.title || "";
@@ -106,13 +273,13 @@
                 document.getElementById('start_buffer').value = config.start_buffer || 2.5;
                 document.getElementById('poll_sec').value = config.poll_sec || 30;
 
-                // Toggle UI
                 document.getElementById('auth-ui').style.display = "none";
                 document.getElementById('admin-ui').style.display = "block";
+
                 showStatus("Access Granted", "#155724", "#d4edda");
                 setTimeout(() => { document.getElementById('status').style.display = "none"; }, 2000);
             } else {
-                showStatus("sorry", "#721c24", "#f8d7da");
+                showStatus("sorry, invalid token or file not found", "#721c24", "#f8d7da");
             }
         } catch (e) {
             showStatus("Connection Error: " + e.message, "#721c24", "#f8d7da");
@@ -151,11 +318,12 @@
             const putResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: `Update: ${config.title}`, content: encodedContent, sha: sha })
+                body: JSON.stringify({ message: `Update: ${config.title || 'Channels'}`, content: encodedContent, sha: sha })
             });
 
             if (putResponse.ok) {
                 showStatus("🚀 Success! App updating...", "#155724", "#d4edda");
+                setTimeout(() => { document.getElementById('status').style.display = "none"; }, 3000);
             } else {
                 const err = await putResponse.json();
                 showStatus("Error: " + err.message, "#721c24", "#f8d7da");
