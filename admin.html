@@ -13,8 +13,10 @@
         input[type="text"], input[type="password"], input[type="file"] { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; }
         
         /* Layout Grids */
-        .grid-2 { display: grid; grid-template-columns: 1fr 2.5fr; gap: 15px; align-items: end; margin-bottom: 5px; }
-        .grid-headers { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: end; margin-top: 10px; background: #fcfcfc; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
+        .stream-block { background: #fcfcfc; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .stream-block h3 { margin-top: 0; margin-bottom: 10px; font-size: 1rem; color: #444; border-bottom: 2px solid #f4f4f4; padding-bottom: 5px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 2.5fr; gap: 15px; align-items: end; margin-bottom: 10px; }
+        .grid-headers { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: end; }
         
         button { width: 100%; margin-top: 15px; padding: 10px; cursor: pointer; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; transition: 0.2s; }
         .btn-push { background: #24292e; color: #fff; }
@@ -46,19 +48,30 @@
 <div id="admin-ui" class="card">
     <h2>CATALYST CONTROL CENTER</h2>
     
-    <div class="grid-2">
-        <div><label>Title 1</label><input type="text" id="title" placeholder="Channel 1"></div>
-        <div><label>Stream URL (Primary)</label><input type="text" id="stream_url" placeholder="https://link-1.m3u8"></div>
+    <!-- SLOT 1 -->
+    <div class="stream-block">
+        <h3>Slot 1 (Primary)</h3>
+        <div class="grid-2">
+            <div><label>Title</label><input type="text" id="title" placeholder="Channel 1"></div>
+            <div><label>Stream URL</label><input type="text" id="stream_url" placeholder="https://link-1.m3u8"></div>
+        </div>
+        <div class="grid-headers">
+            <div><label>User-Agent</label><input type="text" id="ua" placeholder="Mozilla/5.0..."></div>
+            <div><label>Referer</label><input type="text" id="referer" placeholder="https://example.com/"></div>
+        </div>
     </div>
 
-    <div class="grid-2">
-        <div><label>Title 2</label><input type="text" id="title_2" placeholder="Channel 2"></div>
-        <div><label>Stream URL 2</label><input type="text" id="stream_url_2" placeholder="https://link-2.m3u8"></div>
-    </div>
-
-    <div class="grid-headers">
-        <div><label>User-Agent</label><input type="text" id="ua" placeholder="Mozilla/5.0..."></div>
-        <div><label>Referer</label><input type="text" id="referer" placeholder="https://example.com/"></div>
+    <!-- SLOT 2 -->
+    <div class="stream-block">
+        <h3>Slot 2</h3>
+        <div class="grid-2">
+            <div><label>Title</label><input type="text" id="title_2" placeholder="Channel 2"></div>
+            <div><label>Stream URL</label><input type="text" id="stream_url_2" placeholder="https://link-2.m3u8"></div>
+        </div>
+        <div class="grid-headers">
+            <div><label>User-Agent</label><input type="text" id="ua_2" placeholder="Mozilla/5.0..."></div>
+            <div><label>Referer</label><input type="text" id="referer_2" placeholder="https://example.com/"></div>
+        </div>
     </div>
 
     <button class="btn-push" onclick="updateConfig()">Push Updates to App</button>
@@ -214,12 +227,15 @@
                 const data = await response.json();
                 const config = JSON.parse(decodeURIComponent(escape(atob(data.content))));
                 
-                document.getElementById('stream_url').value = config.stream_url || "";
-                document.getElementById('stream_url_2').value = config.stream_url_2 || "";
                 document.getElementById('title').value = config.title || "";
-                document.getElementById('title_2').value = config.title_2 || "";
+                document.getElementById('stream_url').value = config.stream_url || "";
                 document.getElementById('ua').value = config.ua || "";
                 document.getElementById('referer').value = config.referer || "";
+                
+                document.getElementById('title_2').value = config.title_2 || "";
+                document.getElementById('stream_url_2').value = config.stream_url_2 || "";
+                document.getElementById('ua_2').value = config.ua_2 || "";
+                document.getElementById('referer_2').value = config.referer_2 || "";
 
                 document.getElementById('auth-ui').style.display = "none";
                 document.getElementById('admin-ui').style.display = "block";
@@ -242,12 +258,15 @@
         try {
             // --- 1. PREPARE CONFIG DATA ---
             const config = {
+                title: document.getElementById('title').value,
                 stream_url: document.getElementById('stream_url').value,
-                stream_url_2: document.getElementById('stream_url_2').value,
                 ua: document.getElementById('ua').value,
                 referer: document.getElementById('referer').value,
-                title: document.getElementById('title').value,
-                title_2: document.getElementById('title_2').value
+                
+                title_2: document.getElementById('title_2').value,
+                stream_url_2: document.getElementById('stream_url_2').value,
+                ua_2: document.getElementById('ua_2').value,
+                referer_2: document.getElementById('referer_2').value
             };
 
             // --- 2. UPDATE JSON FILE ---
