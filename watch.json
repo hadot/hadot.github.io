@@ -1,7 +1,8 @@
 {
   "stream_url": "https://i.mjh.nz/.r/10-vic.m3u8",
   "stream_url_2": "https://netanyahu.modifiles.fans/secure/UOYSICFgOUruJkBNujkdkIgZQLmLyRjl/1777429800/1777471200/onefc/index.m3u8",
-  "ua": "User-Agent=Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F147.0.0.0%20Safari%2F537.36&Referer=https%3A%2F%2Fpooembed.eu%2F",
+  "ua": "AppleCoreMedia/1.0.0.19L346 (Apple TV; U; CPU OS 15_4 like Mac OS X; en_us)",
+  "referer": "https://pooembed.eu/",
   "buffer": 15,
   "start_buffer": 2.5,
   "poll_sec": 30,
