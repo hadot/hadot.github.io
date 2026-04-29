@@ -10,11 +10,11 @@
         h2 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 15px; font-size: 1.3rem; }
         
         label { display: block; margin-top: 8px; font-weight: bold; font-size: 0.8rem; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
-        input[type="text"], input[type="number"], input[type="password"], input[type="file"] { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; }
+        input[type="text"], input[type="password"], input[type="file"] { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; }
         
         /* Layout Grids */
         .grid-2 { display: grid; grid-template-columns: 1fr 2.5fr; gap: 15px; align-items: end; margin-bottom: 5px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; align-items: end; margin-top: 5px; background: #fcfcfc; padding: 10px; border-radius: 8px; border: 1px solid #eee;}
+        .grid-headers { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: end; margin-top: 10px; background: #fcfcfc; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
         
         button { width: 100%; margin-top: 15px; padding: 10px; cursor: pointer; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; transition: 0.2s; }
         .btn-push { background: #24292e; color: #fff; }
@@ -56,12 +56,9 @@
         <div><label>Stream URL 2</label><input type="text" id="stream_url_2" placeholder="https://link-2.m3u8"></div>
     </div>
 
-    <div class="grid-4">
+    <div class="grid-headers">
         <div><label>User-Agent</label><input type="text" id="ua" placeholder="Mozilla/5.0..."></div>
         <div><label>Referer</label><input type="text" id="referer" placeholder="https://example.com/"></div>
-        <div><label>Buffer (Sec)</label><input type="number" id="buffer" step="0.5"></div>
-        <div><label>Start Delay</label><input type="number" id="start_buffer" step="0.5"></div>
-        <div><label>Poll (Sec)</label><input type="number" id="poll_sec"></div>
     </div>
 
     <button class="btn-push" onclick="updateConfig()">Push Updates to App</button>
@@ -223,9 +220,6 @@
                 document.getElementById('title_2').value = config.title_2 || "";
                 document.getElementById('ua').value = config.ua || "";
                 document.getElementById('referer').value = config.referer || "";
-                document.getElementById('buffer').value = config.buffer || 15;
-                document.getElementById('start_buffer').value = config.start_buffer || 2.5;
-                document.getElementById('poll_sec').value = config.poll_sec || 30;
 
                 document.getElementById('auth-ui').style.display = "none";
                 document.getElementById('admin-ui').style.display = "block";
@@ -252,9 +246,6 @@
                 stream_url_2: document.getElementById('stream_url_2').value,
                 ua: document.getElementById('ua').value,
                 referer: document.getElementById('referer').value,
-                buffer: parseFloat(document.getElementById('buffer').value),
-                start_buffer: parseFloat(document.getElementById('start_buffer').value),
-                poll_sec: parseInt(document.getElementById('poll_sec').value),
                 title: document.getElementById('title').value,
                 title_2: document.getElementById('title_2').value
             };
