@@ -1,8 +1,10 @@
 {
-  "stream_url": "https://i.mjh.nz/.r/10-vic.m3u8",
-  "stream_url_2": "https://netanyahu.modifiles.fans/secure/UOYSICFgOUruJkBNujkdkIgZQLmLyRjl/1777429800/1777471200/onefc/index.m3u8",
+  "title": "ONE Samurai 1: Rodtang vs. Takeru 2",
+  "stream_url": "https://netanyahu.modifiles.fans/secure/UOYSICFgOUruJkBNujkdkIgZQLmLyRjl/1777429800/1777471200/onefc/index.m3u8",
   "ua": "AppleCoreMedia/1.0.0.19L346 (Apple TV; U; CPU OS 15_4 like Mac OS X; en_us)",
   "referer": "https://pooembed.eu/",
-  "title": "10",
-  "title_2": "ONEFC"
+  "title_2": "ONE Samurai 1: Rodtang vs. Takeru 2 (backup)",
+  "stream_url_2": "https://lb7.strmd.top/secure/TIlfphxZURZssXGYKVjvWNJeaBcCGFeH/rtmp/stream/onefc/1/playlist.m3u8",
+  "ua_2": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+  "referer_2": "https://embedsports.top/"
 }
