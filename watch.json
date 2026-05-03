@@ -3,12 +3,15 @@
   "stream_url": "",
   "ua": "",
   "referer": "",
+  "is_web": false,
   "title_2": "",
   "stream_url_2": "",
   "ua_2": "",
   "referer_2": "",
+  "is_web_2": false,
   "title_3": "Cricket 1",
   "stream_url_3": "https://embedsports.top/embed/admin/ppv-gujarat-titans-vs-punjab-kings/1",
   "ua_3": "",
-  "referer_3": ""
+  "referer_3": "",
+  "is_web_3": true
 }
