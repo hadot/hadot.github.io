@@ -74,6 +74,19 @@
         </div>
     </div>
 
+    <!-- SLOT 3 -->
+    <div class="stream-block">
+        <h3>Slot 3</h3>
+        <div class="grid-2">
+            <div><label>Title</label><input type="text" id="title_3" placeholder="Channel 3"></div>
+            <div><label>Stream URL</label><input type="text" id="stream_url_3" placeholder="https://link-3.m3u8"></div>
+        </div>
+        <div class="grid-headers">
+            <div><label>User-Agent</label><input type="text" id="ua_3" placeholder="Mozilla/5.0..."></div>
+            <div><label>Referer</label><input type="text" id="referer_3" placeholder="https://example.com/"></div>
+        </div>
+    </div>
+
     <button class="btn-push" onclick="updateConfig()">Push Updates to App</button>
 
     <div style="margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px;">
@@ -83,6 +96,7 @@
             <div class="radio-group">
                 <label><input type="radio" name="targetSlot" value="1" checked> Slot 1</label>
                 <label><input type="radio" name="targetSlot" value="2"> Slot 2</label>
+                <label><input type="radio" name="targetSlot" value="3"> Slot 3</label>
             </div>
         </div>
         
@@ -194,10 +208,14 @@
             document.getElementById('title').value = name;
             document.getElementById('stream_url').value = url;
             showStatus(`Primary slot filled with ${name}`, "#004085", "#cce5ff");
-        } else {
+        } else if (target === "2") {
             document.getElementById('title_2').value = name;
             document.getElementById('stream_url_2').value = url;
             showStatus(`Slot 2 filled with ${name}`, "#004085", "#cce5ff");
+        } else {
+            document.getElementById('title_3').value = name;
+            document.getElementById('stream_url_3').value = url;
+            showStatus(`Slot 3 filled with ${name}`, "#004085", "#cce5ff");
         }
         setTimeout(() => { document.getElementById('status').style.display = "none"; }, 1500);
     }
@@ -237,6 +255,11 @@
                 document.getElementById('ua_2').value = config.ua_2 || "";
                 document.getElementById('referer_2').value = config.referer_2 || "";
 
+                document.getElementById('title_3').value = config.title_3 || "";
+                document.getElementById('stream_url_3').value = config.stream_url_3 || "";
+                document.getElementById('ua_3').value = config.ua_3 || "";
+                document.getElementById('referer_3').value = config.referer_3 || "";
+
                 document.getElementById('auth-ui').style.display = "none";
                 document.getElementById('admin-ui').style.display = "block";
                 
@@ -266,7 +289,12 @@
                 title_2: document.getElementById('title_2').value,
                 stream_url_2: document.getElementById('stream_url_2').value,
                 ua_2: document.getElementById('ua_2').value,
-                referer_2: document.getElementById('referer_2').value
+                referer_2: document.getElementById('referer_2').value,
+
+                title_3: document.getElementById('title_3').value,
+                stream_url_3: document.getElementById('stream_url_3').value,
+                ua_3: document.getElementById('ua_3').value,
+                referer_3: document.getElementById('referer_3').value
             };
 
             // --- 2. UPDATE JSON FILE ---
@@ -321,7 +349,25 @@
                 if (!putM3u2Response.ok) throw new Error("Failed to update 2.m3u");
             }
 
-            // --- 5. SUCCESS ---
+            // --- 5. BUILD AND UPDATE 3.m3u ---
+            if (config.stream_url_3) {
+                let m3u3Content = `#EXTM3U\n#EXTINF:-1, ${config.title_3 || 'Channel 3'}\n${config.stream_url_3}\n`;
+                let m3u3Sha = null;
+                const getM3u3Response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/3.m3u`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (getM3u3Response.ok) m3u3Sha = (await getM3u3Response.json()).sha;
+
+                const encodedM3u3 = btoa(unescape(encodeURIComponent(m3u3Content)));
+                const putM3u3Response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/3.m3u`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: `Update 3.m3u: ${config.title_3 || 'Channel 3'}`, content: encodedM3u3, sha: m3u3Sha })
+                });
+                if (!putM3u3Response.ok) throw new Error("Failed to update 3.m3u");
+            }
+
+            // --- 6. SUCCESS ---
             showStatus("🚀 Success! Data and M3U files updated.", "#155724", "#d4edda");
             setTimeout(() => { document.getElementById('status').style.display = "none"; }, 3000);
 
